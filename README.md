@@ -1,2 +1,2 @@
-# group-5-TATHYA-AYA-EMMANUEL-YASHIKA-ABHIMANU
+# Finance-&-budget-for-city-management
 this is a group project for software adv dev, we are suppose to do unit feature for finance and budget for city management. 
