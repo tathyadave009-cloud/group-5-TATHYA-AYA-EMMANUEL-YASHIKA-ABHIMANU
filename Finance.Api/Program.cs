@@ -8,10 +8,16 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Real department budgets (Aya, BF-02) shared with Emmanuel's expense service.
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+    p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+
+// Real department budgets (Aya, BF-02) shared with Emmanuel's expense service.
 builder.Services.AddSingleton<ExpenseService>(_ =>
     new ExpenseService(DepartmentBudgets.StartingBudgets()));
 
 var app = builder.Build();
+
+app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {
@@ -22,11 +28,5 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-
-app.MapGet("/health", () => Results.Ok(new
-{
-    status = "healthy",
-    service = "budget-finance"
-}));
 
 app.Run();
