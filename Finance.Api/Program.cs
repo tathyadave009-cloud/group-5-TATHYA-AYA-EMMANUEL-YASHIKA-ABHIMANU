@@ -31,4 +31,10 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "healthy",
+    service = "budget-finance"
+}));
+
 app.Run();
