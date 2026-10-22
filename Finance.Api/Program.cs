@@ -1,3 +1,4 @@
+using Finance.Api.Data;
 using Finance.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,18 +7,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Temporary budgets for testing Emmanuel's expense endpoint.
+// Real department budgets (Aya, BF-02) shared with Emmanuel's expense service.
 builder.Services.AddSingleton<ExpenseService>(_ =>
-    new ExpenseService(new Dictionary<string, decimal>
-    {
-        ["TRANSIT"] = 10000m,
-        ["UTIL"] = 10000m,
-        ["RES"] = 10000m,
-        ["SEC"] = 10000m,
-        ["FIN"] = 10000m,
-        ["HR"] = 10000m,
-        ["EMS"] = 10000m
-    }));
+    new ExpenseService(DepartmentBudgets.StartingBudgets()));
 
 var app = builder.Build();
 
