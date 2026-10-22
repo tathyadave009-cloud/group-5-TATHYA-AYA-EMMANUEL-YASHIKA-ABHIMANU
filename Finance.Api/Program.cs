@@ -6,6 +6,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+    p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+
 // Temporary budgets for testing Emmanuel's expense endpoint.
 builder.Services.AddSingleton<ExpenseService>(_ =>
     new ExpenseService(new Dictionary<string, decimal>
@@ -21,6 +24,8 @@ builder.Services.AddSingleton<ExpenseService>(_ =>
 
 var app = builder.Build();
 
+app.UseCors();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -30,11 +35,5 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-
-app.MapGet("/health", () => Results.Ok(new
-{
-    status = "healthy",
-    service = "budget-finance"
-}));
 
 app.Run();
