@@ -33,4 +33,11 @@ public class ExpensesController : ControllerBase
 
         return StatusCode(StatusCodes.Status201Created, result);
     }
+    
+    [HttpGet]
+    public ActionResult<Expense[]> Get()
+    {
+        return Ok(_expenseService.GetExpenses());
+    }
+
 }
