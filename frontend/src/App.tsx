@@ -1,6 +1,6 @@
-
 import { useEffect, useState } from 'react'
 import './App.css'
+import BudgetTable from './BudgetTable'
 
 const departments = [
   'TRANSIT',
@@ -114,6 +114,9 @@ function App() {
   return (
     <main>
       <h1>Budget & Finance Service</h1>
+
+      <BudgetTable />
+
       <h2>BF-05 — Expense Submission</h2>
 
       <form onSubmit={handleSubmit}>
