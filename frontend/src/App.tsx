@@ -170,7 +170,7 @@ function App() {
         <section aria-live="polite">
           <h3>{result.approved ? 'Expense Approved' : 'Expense Rejected'}</h3>
           <p>{result.message}</p>
-          {result.remainingBudget !== undefined && (
+          {result.remainingBudget != null && (
             <p>Remaining Budget: ${result.remainingBudget.toFixed(2)}</p>
           )}
         </section>
