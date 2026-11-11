@@ -7,13 +7,22 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Real department budgets (Aya, BF-02) shared with Emmanuel's expense service.
-builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
-    p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddCors(options =>
+    options.AddDefaultPolicy(policy =>
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod()));
 
-// Real department budgets (Aya, BF-02) shared with Emmanuel's expense service.
 builder.Services.AddSingleton<ExpenseService>(_ =>
-    new ExpenseService(DepartmentBudgets.StartingBudgets()));
+    new ExpenseService(
+        DepartmentBudgets.StartingBudgets()));
+
+builder.Services.AddSingleton<IBudgetFundingService>(
+    provider =>
+        provider.GetRequiredService<ExpenseService>());
+
+builder.Services.AddSingleton<FundingRequestService>();
 
 var app = builder.Build();
 
