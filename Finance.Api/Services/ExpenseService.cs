@@ -1,4 +1,4 @@
-﻿namespace Finance.Api.Services;
+namespace Finance.Api.Services;
 
 public record Expense(
     Guid Id,
@@ -13,6 +13,12 @@ public record ExpenseResult(
     decimal? RemainingBudget,
     Expense? Expense);
 
+public record ExpensePage(
+    Expense[] Items,
+    int Page,
+    int PageSize,
+    int TotalCount);
+
 public class ExpenseService : IBudgetFundingService
 {
     private readonly Dictionary<string, decimal> _remainingBudgets;
@@ -21,6 +27,7 @@ public class ExpenseService : IBudgetFundingService
 
     public ExpenseService(Dictionary<string, decimal> budgets)
     {
+        // Copy the supplied budgets to avoid changing the original data.
         _remainingBudgets = new Dictionary<string, decimal>(
             budgets,
             StringComparer.OrdinalIgnoreCase);
@@ -67,14 +74,12 @@ public class ExpenseService : IBudgetFundingService
                 null);
         }
 
-        string code =
-            departmentCode.Trim().ToUpperInvariant();
+        string code = departmentCode.Trim().ToUpperInvariant();
 
+        // Check and update together to prevent simultaneous overspending.
         lock (_lock)
         {
-            if (!_remainingBudgets.TryGetValue(
-                code,
-                out decimal remaining))
+            if (!_remainingBudgets.TryGetValue(code, out decimal remaining))
             {
                 return new(
                     false,
@@ -100,8 +105,7 @@ public class ExpenseService : IBudgetFundingService
                 DateTime.UtcNow);
 
             _expenses.Add(expense);
-            _remainingBudgets[code] =
-                remaining - amount;
+            _remainingBudgets[code] = remaining - amount;
 
             return new(
                 true,
@@ -111,8 +115,7 @@ public class ExpenseService : IBudgetFundingService
         }
     }
 
-    public decimal? GetRemainingBudget(
-        string departmentCode)
+    public decimal? GetRemainingBudget(string departmentCode)
     {
         lock (_lock)
         {
@@ -124,51 +127,102 @@ public class ExpenseService : IBudgetFundingService
         }
     }
 
-    public void AddFunds(
-        string departmentCode,
-        decimal amount)
+    public void AddFunds(string departmentCode, decimal amount)
     {
         if (string.IsNullOrWhiteSpace(departmentCode))
         {
-            throw new ArgumentException(
-                "Department code is required.");
+            throw new ArgumentException("Department code is required.");
         }
 
         if (amount <= 0)
         {
-            throw new ArgumentException(
-                "Amount must be greater than zero.");
+            throw new ArgumentException("Amount must be greater than zero.");
         }
 
         if (decimal.Round(amount, 2) != amount)
         {
-            throw new ArgumentException(
-                "Amount must have at most two decimal places.");
+            throw new ArgumentException("Amount must have at most two decimal places.");
         }
 
-        string code =
-            departmentCode.Trim().ToUpperInvariant();
+        string code = departmentCode.Trim().ToUpperInvariant();
 
         lock (_lock)
         {
-            if (!_remainingBudgets.TryGetValue(
-                code,
-                out decimal remaining))
+            if (!_remainingBudgets.TryGetValue(code, out decimal remaining))
             {
-                throw new ArgumentException(
-                    "Unknown department code.");
+                throw new ArgumentException("Unknown department code.");
             }
 
-            _remainingBudgets[code] =
-                remaining + amount;
+            _remainingBudgets[code] = remaining + amount;
         }
     }
 
+    // Retained for compatibility with the existing Sprint 1 tests.
     public Expense[] GetExpenses()
     {
         lock (_lock)
         {
             return _expenses.ToArray();
+        }
+    }
+
+    public ExpensePage GetExpenses(
+        string? departmentCode,
+        int page,
+        int pageSize)
+    {
+        if (page < 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(page),
+                "Page must be at least 1.");
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(pageSize),
+                "Page size must be between 1 and 100.");
+        }
+
+        lock (_lock)
+        {
+            IEnumerable<Expense> query = _expenses
+                .AsEnumerable()
+                .Reverse();
+
+            if (!string.IsNullOrWhiteSpace(departmentCode))
+            {
+                string code = departmentCode
+                    .Trim()
+                    .ToUpperInvariant();
+
+                if (!_remainingBudgets.ContainsKey(code))
+                {
+                    throw new ArgumentException(
+                        "Unknown department code.",
+                        nameof(departmentCode));
+                }
+
+                query = query.Where(
+                    expense => expense.DepartmentCode.Equals(
+                        code,
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            Expense[] matchingExpenses = query.ToArray();
+            int totalCount = matchingExpenses.Length;
+
+            Expense[] items = matchingExpenses
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToArray();
+
+            return new ExpensePage(
+                items,
+                page,
+                pageSize,
+                totalCount);
         }
     }
 }
