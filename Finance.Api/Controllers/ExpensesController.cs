@@ -1,4 +1,6 @@
-﻿using Finance.Api.Services;
+using Finance.Api.Models;
+using Finance.Api.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Finance.Api.Controllers;
@@ -9,6 +11,7 @@ public record CreateExpenseRequest(
     string? Description);
 
 [ApiController]
+[Route("api/budget/v1/expenses")]
 [Route("api/expenses")]
 public class ExpensesController : ControllerBase
 {
@@ -55,10 +58,10 @@ public class ExpensesController : ControllerBase
         }
         catch (ArgumentException exception)
         {
-            return BadRequest(new
-            {
-                message = exception.Message
-            });
+            return BadRequest(new ApiError(
+                "bad_request",
+                exception.Message,
+                HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("n")));
         }
     }
 }
