@@ -23,21 +23,42 @@ public class ExpensesController : ControllerBase
     public ActionResult<ExpenseResult> Post(
         [FromBody] CreateExpenseRequest request)
     {
-        var result = _expenseService.RecordExpense(
+        ExpenseResult result = _expenseService.RecordExpense(
             request.DepartmentCode,
             request.Amount,
             request.Description);
 
         if (!result.Approved)
+        {
             return BadRequest(result);
+        }
 
-        return StatusCode(StatusCodes.Status201Created, result);
+        return StatusCode(
+            StatusCodes.Status201Created,
+            result);
     }
-    
+
     [HttpGet]
-    public ActionResult<Expense[]> Get()
+    public ActionResult<ExpensePage> Get(
+        [FromQuery] string? department = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        return Ok(_expenseService.GetExpenses());
-    }
+        try
+        {
+            ExpensePage result = _expenseService.GetExpenses(
+                department,
+                page,
+                pageSize);
 
+            return Ok(result);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new
+            {
+                message = exception.Message
+            });
+        }
+    }
 }
