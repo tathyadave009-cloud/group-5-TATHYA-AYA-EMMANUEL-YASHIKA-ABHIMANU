@@ -1,3 +1,4 @@
+
 using Finance.Api.Data;
 using Finance.Api.Models;
 using Finance.Api.Services;
@@ -48,6 +49,9 @@ builder.Services.AddSingleton<IBudgetFundingService>(
         provider.GetRequiredService<ExpenseService>());
 
 builder.Services.AddSingleton<FundingRequestService>();
+
+// Register the revenue service for Sprint 2 BF-08.
+builder.Services.AddSingleton<RevenueService>();
 
 var app = builder.Build();
 

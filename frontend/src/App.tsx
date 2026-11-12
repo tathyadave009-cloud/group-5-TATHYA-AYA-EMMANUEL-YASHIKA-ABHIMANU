@@ -6,6 +6,7 @@ import {
 } from 'react'
 import './App.css'
 import BudgetTable from './BudgetTable'
+import RevenueSection from './RevenueSection'
 import FundingRequests from './FundingRequests.tsx'
 
 const departments = [
@@ -352,7 +353,9 @@ function App() {
 
           <p>Total expenses: {totalExpenses}</p>
         </div>
-      </section>
+           </section>
+
+      <RevenueSection />
     </main>
   )
 }
