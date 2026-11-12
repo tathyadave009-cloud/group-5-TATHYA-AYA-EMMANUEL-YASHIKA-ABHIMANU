@@ -27,7 +27,7 @@ export default function BudgetTable() {
 
     async function load() {
       try {
-        const res = await fetch('/api/budgets');
+        const res = await fetch('/api/budget/v1/budgets');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: unknown = await res.json();
         if (!Array.isArray(data)) throw new Error('Unexpected response');
