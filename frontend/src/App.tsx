@@ -71,7 +71,7 @@ function App() {
         }
 
         const response = await fetch(
-          `/api/expenses?${parameters.toString()}`
+          `/api/budget/v1/expenses?${parameters.toString()}`
         )
 
         if (!response.ok) {
@@ -123,7 +123,7 @@ function App() {
     setResult(null)
 
     try {
-      const response = await fetch('/api/expenses', {
+      const response = await fetch('/api/budget/v1/expenses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -14,7 +14,7 @@ interface DepartmentBudget {
 
 // The address of the budgets API. After Tathya's routes pull request is merged,
 // change this ONE line to '/api/budget/v1/budgets' (BF-11).
-const BUDGETS_URL = '/api/budgets';
+const BUDGETS_URL = '/api/budget/v1/budgets';
 
 const REFRESH_MS = 3000;
 
