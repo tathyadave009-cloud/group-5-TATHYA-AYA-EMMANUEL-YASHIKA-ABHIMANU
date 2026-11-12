@@ -44,7 +44,11 @@ public class BudgetTests
     {
         var controller = CreateController(out _);
 
-        Assert.IsType<NotFoundObjectResult>(controller.Get("PARKS").Result);
+        var notFound = Assert.IsType<NotFoundObjectResult>(controller.Get("PARKS").Result);
+        var error = Assert.IsType<ApiError>(notFound.Value);
+        Assert.Equal("not_found", error.Error);
+        Assert.Contains("PARKS", error.Message);
+        Assert.False(string.IsNullOrWhiteSpace(error.TraceId));
     }
 
     [Fact]
