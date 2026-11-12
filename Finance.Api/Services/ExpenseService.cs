@@ -13,6 +13,11 @@ public record ExpenseResult(
     decimal? RemainingBudget,
     Expense? Expense);
 
+// BF-06: the answer when Finance tries to change a department's budget.
+public record BudgetChangeResult(
+    bool Success,
+    string Message);
+
 public record ExpensePage(
     Expense[] Items,
     int Page,
@@ -22,6 +27,9 @@ public record ExpensePage(
 public class ExpenseService : IBudgetFundingService
 {
     private readonly Dictionary<string, decimal> _remainingBudgets;
+
+    // BF-06: the yearly budget given to each department (can now change).
+    private readonly Dictionary<string, decimal> _allocated;
     private readonly List<Expense> _expenses = new();
     private readonly object _lock = new();
 
@@ -29,6 +37,10 @@ public class ExpenseService : IBudgetFundingService
     {
         // Copy the supplied budgets to avoid changing the original data.
         _remainingBudgets = new Dictionary<string, decimal>(
+            budgets,
+            StringComparer.OrdinalIgnoreCase);
+
+        _allocated = new Dictionary<string, decimal>(
             budgets,
             StringComparer.OrdinalIgnoreCase);
     }
@@ -127,6 +139,68 @@ public class ExpenseService : IBudgetFundingService
         }
     }
 
+    // BF-06: the department's current yearly budget, or null if unknown.
+    public decimal? GetAllocated(string departmentCode)
+    {
+        lock (_lock)
+        {
+            return _allocated.TryGetValue(
+                departmentCode.Trim(),
+                out decimal allocated)
+                ? allocated
+                : null;
+        }
+    }
+
+    // BF-06: Finance changes a department's yearly budget.
+    // Refused if the new budget is lower than what is already spent.
+    public BudgetChangeResult SetAllocation(
+        string? departmentCode,
+        decimal newAllocated)
+    {
+        if (string.IsNullOrWhiteSpace(departmentCode))
+        {
+            return new(false, "Department code is required.");
+        }
+
+        if (newAllocated <= 0)
+        {
+            return new(false, "New budget must be greater than zero.");
+        }
+
+        if (decimal.Round(newAllocated, 2) != newAllocated)
+        {
+            return new(false, "New budget must have at most two decimal places.");
+        }
+
+        string code = departmentCode.Trim().ToUpperInvariant();
+
+        lock (_lock)
+        {
+            if (!_allocated.TryGetValue(code, out decimal allocated))
+            {
+                return new(false, "Unknown department code.");
+            }
+
+            decimal spent = allocated - _remainingBudgets[code];
+
+            if (newAllocated < spent)
+            {
+                return new(
+                    false,
+                    $"New budget is lower than what is already spent ({spent:N2}).");
+            }
+
+            _allocated[code] = newAllocated;
+            _remainingBudgets[code] = newAllocated - spent;
+
+            return new(true, "Budget updated.");
+        }
+    }
+
+    // Used by BF-07 when a funding request is approved.
+    // BF-06: adds the money to BOTH the yearly budget and what is left,
+    // so "spent" stays correct.
     public void AddFunds(string departmentCode, decimal amount)
     {
         if (string.IsNullOrWhiteSpace(departmentCode))
@@ -153,6 +227,7 @@ public class ExpenseService : IBudgetFundingService
                 throw new ArgumentException("Unknown department code.");
             }
 
+            _allocated[code] += amount;
             _remainingBudgets[code] = remaining + amount;
         }
     }

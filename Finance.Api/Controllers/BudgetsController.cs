@@ -24,23 +24,66 @@ public class BudgetsController : ControllerBase
         return Ok(budgets);
     }
 
+    // BF-13: GET /api/budgets/summary -> totals for the whole city
+    [HttpGet("summary")]
+    public ActionResult<BudgetSummary> GetSummary()
+    {
+        var budgets = DepartmentBudgets.All.Select(ToBudget).ToList();
+
+        var summary = new BudgetSummary(
+            budgets.Sum(b => b.Allocated),
+            budgets.Sum(b => b.Spent),
+            budgets.Sum(b => b.Remaining),
+            "CAD",
+            budgets.Where(b => b.LowBudget).Select(b => b.DepartmentCode).ToList());
+
+        return Ok(summary);
+    }
+
     // GET /api/budgets/EMS -> one department
     [HttpGet("{departmentCode}")]
     public ActionResult<Budget> Get(string departmentCode)
     {
         var department = DepartmentBudgets.Find(departmentCode);
         if (department == null)
-            return NotFound(new { message = $"Unknown department code '{departmentCode}'." });
+            return NotFound(Error("not_found", $"Unknown department code '{departmentCode}'."));
 
         return Ok(ToBudget(department));
     }
 
-    // Spent = what Emmanuel's ExpenseService has already taken off the budget.
+    // BF-06: PUT /api/budgets/EMS  body: { "allocated": 5000000 }
+    // 200 = changed, 404 = unknown department, 400 = refused (e.g. lower than spent)
+    [HttpPut("{departmentCode}")]
+    public ActionResult<Budget> Update(string departmentCode, [FromBody] UpdateBudgetRequest request)
+    {
+        var department = DepartmentBudgets.Find(departmentCode);
+        if (department == null)
+            return NotFound(Error("not_found", $"Unknown department code '{departmentCode}'."));
+
+        var result = _expenseService.SetAllocation(department.Code, request.Allocated);
+        if (!result.Success)
+            return BadRequest(Error("invalid_budget", result.Message));
+
+        return Ok(ToBudget(department));
+    }
+
+    // Allocated and remaining come from ExpenseService, so changes from
+    // BF-06 (new budget), BF-07 (approved funding) and expenses all show here.
     private Budget ToBudget(Department department)
     {
-        decimal remaining = _expenseService.GetRemainingBudget(department.Code) ?? department.Allocated;
-        decimal spent = department.Allocated - remaining;
+        decimal allocated = _expenseService.GetAllocated(department.Code) ?? department.Allocated;
+        decimal remaining = _expenseService.GetRemainingBudget(department.Code) ?? allocated;
+        decimal spent = allocated - remaining;
+        bool lowBudget = remaining < allocated * 0.10m;
 
-        return new Budget(department.Code, department.Name, department.Allocated, spent, remaining);
+        return new Budget(department.Code, department.Name, allocated, spent, remaining, lowBudget);
     }
+
+    // Class error shape (SH-I03): { error, message, traceId }
+    private object Error(string code, string message) => new
+    {
+        error = code,
+        message,
+        traceId = HttpContext?.TraceIdentifier ?? ""
+    };
 }
