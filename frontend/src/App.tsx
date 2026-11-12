@@ -7,6 +7,8 @@ import {
 import './App.css'
 import BudgetTable from './BudgetTable'
 import RevenueSection from './RevenueSection'
+import FundingRequests from './FundingRequests.tsx'
+
 const departments = [
   'TRANSIT',
   'UTIL',
@@ -70,7 +72,7 @@ function App() {
         }
 
         const response = await fetch(
-          `/api/expenses?${parameters.toString()}`
+          `/api/budget/v1/expenses?${parameters.toString()}`
         )
 
         if (!response.ok) {
@@ -122,7 +124,7 @@ function App() {
     setResult(null)
 
     try {
-      const response = await fetch('/api/expenses', {
+      const response = await fetch('/api/budget/v1/expenses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -169,6 +171,8 @@ function App() {
       <h1>Budget & Finance Service</h1>
 
       <BudgetTable />
+
+      <FundingRequests />
 
       <h2>BF-05 — Expense Submission</h2>
 

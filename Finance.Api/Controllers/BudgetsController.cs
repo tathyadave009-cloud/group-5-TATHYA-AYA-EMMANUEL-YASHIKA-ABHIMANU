@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Finance.Api.Controllers;
 
 [ApiController]
+[Route("api/budget/v1/budgets")]
 [Route("api/budgets")]
 public class BudgetsController : ControllerBase
 {
@@ -16,7 +17,7 @@ public class BudgetsController : ControllerBase
         _expenseService = expenseService;
     }
 
-    // GET /api/budgets -> all 7 departments
+    // GET /api/budget/v1/budgets -> all 7 departments
     [HttpGet]
     public ActionResult<IEnumerable<Budget>> GetAll()
     {
@@ -24,7 +25,7 @@ public class BudgetsController : ControllerBase
         return Ok(budgets);
     }
 
-    // BF-13: GET /api/budgets/summary -> totals for the whole city
+    // BF-13: GET /api/budget/v1/budgets/summary -> totals for the whole city
     [HttpGet("summary")]
     public ActionResult<BudgetSummary> GetSummary()
     {
@@ -40,29 +41,44 @@ public class BudgetsController : ControllerBase
         return Ok(summary);
     }
 
-    // GET /api/budgets/EMS -> one department
+    // GET /api/budget/v1/budgets/EMS -> one department
     [HttpGet("{departmentCode}")]
     public ActionResult<Budget> Get(string departmentCode)
     {
         var department = DepartmentBudgets.Find(departmentCode);
         if (department == null)
-            return NotFound(Error("not_found", $"Unknown department code '{departmentCode}'."));
+        {
+            return NotFound(new ApiError(
+                "not_found",
+                $"Unknown department code '{departmentCode}'.",
+                HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("n")));
+        }
 
         return Ok(ToBudget(department));
     }
 
-    // BF-06: PUT /api/budgets/EMS  body: { "allocated": 5000000 }
+    // BF-06: PUT /api/budget/v1/budgets/EMS  body: { "allocated": 5000000 }
     // 200 = changed, 404 = unknown department, 400 = refused (e.g. lower than spent)
     [HttpPut("{departmentCode}")]
     public ActionResult<Budget> Update(string departmentCode, [FromBody] UpdateBudgetRequest request)
     {
         var department = DepartmentBudgets.Find(departmentCode);
         if (department == null)
-            return NotFound(Error("not_found", $"Unknown department code '{departmentCode}'."));
+        {
+            return NotFound(new ApiError(
+                "not_found",
+                $"Unknown department code '{departmentCode}'.",
+                HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("n")));
+        }
 
         var result = _expenseService.SetAllocation(department.Code, request.Allocated);
         if (!result.Success)
-            return BadRequest(Error("invalid_budget", result.Message));
+        {
+            return BadRequest(new ApiError(
+                "invalid_budget",
+                result.Message,
+                HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("n")));
+        }
 
         return Ok(ToBudget(department));
     }
@@ -78,12 +94,4 @@ public class BudgetsController : ControllerBase
 
         return new Budget(department.Code, department.Name, allocated, spent, remaining, lowBudget);
     }
-
-    // Class error shape (SH-I03): { error, message, traceId }
-    private object Error(string code, string message) => new
-    {
-        error = code,
-        message,
-        traceId = HttpContext?.TraceIdentifier ?? ""
-    };
 }
