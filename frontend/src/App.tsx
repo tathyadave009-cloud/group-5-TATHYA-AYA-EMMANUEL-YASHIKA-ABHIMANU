@@ -6,6 +6,7 @@ import {
 } from 'react'
 import './App.css'
 import BudgetTable from './BudgetTable'
+import FundingRequests from './FundingRequests.tsx'
 
 const departments = [
   'TRANSIT',
@@ -169,6 +170,8 @@ function App() {
       <h1>Budget & Finance Service</h1>
 
       <BudgetTable />
+
+      <FundingRequests />
 
       <h2>BF-05 — Expense Submission</h2>
 
