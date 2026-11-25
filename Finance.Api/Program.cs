@@ -53,6 +53,12 @@ builder.Services.AddSingleton<FundingRequestService>();
 // Register the revenue service for Sprint 2 BF-08.
 builder.Services.AddSingleton<RevenueService>();
 
+// BF-20: Security notification client.
+builder.Services.AddHttpClient<SecurityNotificationService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+
 var app = builder.Build();
 
 app.UseExceptionHandler(exceptionHandlerApp =>
