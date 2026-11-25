@@ -1,4 +1,4 @@
-
+﻿
 namespace Finance.Api.Services;
 
 // Represents a recorded city revenue transaction.
@@ -8,7 +8,10 @@ public record Revenue(
     string DepartmentCode,
     decimal Amount,
     string Description,
-    DateTime CreatedAtUtc);
+    DateTime CreatedAtUtc,
+    string? ResidentId = null,
+    DateOnly? DueDate = null,
+    string? OverdueNoticeStatus = null);
 
 // Represents the result of recording revenue.
 public record RevenueResult(
@@ -32,11 +35,15 @@ public class RevenueService
         };
 
     // Validates and records a revenue transaction.
+
     public RevenueResult RecordRevenue(
         string? source,
         string? departmentCode,
         decimal amount,
-        string? description)
+        string? description,
+        string? residentId = null,
+        DateOnly? dueDate = null)
+
     {
         // Validate revenue source.
         if (string.IsNullOrWhiteSpace(source) ||
@@ -83,13 +90,22 @@ public class RevenueService
         // Safely create and store the revenue transaction.
         lock (_lock)
         {
-            var revenue = new Revenue(
-                Guid.NewGuid(),
-                source.Trim().ToUpperInvariant(),
-                department.Code,
-                amount,
-                description.Trim(),
-                DateTime.UtcNow);
+
+           var revenue = new Revenue(
+    Guid.NewGuid(),
+    source.Trim().ToUpperInvariant(),
+    department.Code,
+    amount,
+    description.Trim(),
+    DateTime.UtcNow,
+    source.Trim().Equals("FINES", StringComparison.OrdinalIgnoreCase)
+        ? residentId?.Trim()
+        : null,
+    source.Trim().Equals("FINES", StringComparison.OrdinalIgnoreCase)
+        ? dueDate
+        : null);
+
+
 
             _revenues.Add(revenue);
 
@@ -97,6 +113,38 @@ public class RevenueService
                 true,
                 "Revenue recorded successfully.",
                 revenue);
+        }
+    }
+
+
+    // Finds a revenue transaction using its ID.
+    public Revenue? GetRevenueById(Guid id)
+    {
+        lock (_lock)
+        {
+            return _revenues.Find(revenue => revenue.Id == id);
+        }
+    }
+
+    // Updates the result of an overdue fine notification.
+    public bool UpdateOverdueNoticeStatus(Guid id, string status)
+    {
+        lock (_lock)
+        {
+            int index = _revenues.FindIndex(
+                revenue => revenue.Id == id);
+
+            if (index < 0)
+            {
+                return false;
+            }
+
+            _revenues[index] = _revenues[index] with
+            {
+                OverdueNoticeStatus = status
+            };
+
+            return true;
         }
     }
 
