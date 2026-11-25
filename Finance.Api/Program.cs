@@ -77,11 +77,12 @@ app.UseExceptionHandler(exceptionHandlerApp =>
 
 app.UseCors();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Swagger stays on in every environment so other groups can see our API on Azure (BF-18).
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// The main link opens the Swagger page instead of a 404.
+app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
