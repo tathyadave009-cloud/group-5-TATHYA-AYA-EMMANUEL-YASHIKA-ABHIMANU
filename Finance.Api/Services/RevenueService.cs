@@ -91,18 +91,19 @@ public class RevenueService
         lock (_lock)
         {
 
-            var revenue = new Revenue(
-                Guid.NewGuid(),
-                source.Trim().ToUpperInvariant(),
-                department.Code,
-                amount,
-                description.Trim(),
-                DateTime.UtcNow,
-                source.Trim().Equals("FINES", StringComparison.OrdinalIgnoreCase)
-                    ? residentId?.Trim()
-                    : null,
-                    ? dueDate
-                    : null);
+           var revenue = new Revenue(
+    Guid.NewGuid(),
+    source.Trim().ToUpperInvariant(),
+    department.Code,
+    amount,
+    description.Trim(),
+    DateTime.UtcNow,
+    source.Trim().Equals("FINES", StringComparison.OrdinalIgnoreCase)
+        ? residentId?.Trim()
+        : null,
+    source.Trim().Equals("FINES", StringComparison.OrdinalIgnoreCase)
+        ? dueDate
+        : null);
 
 
 
