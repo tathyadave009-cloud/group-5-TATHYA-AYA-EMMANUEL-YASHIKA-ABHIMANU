@@ -9,7 +9,7 @@ public class FundingRequestIntegrationTests
     public void ApprovingRequest_IncreasesActualDepartmentBudget()
     {
         var expenseService =
-            new ExpenseService(DepartmentBudgets.StartingBudgets());
+            new ExpenseService(new TestDbFactory(),DepartmentBudgets.StartingBudgets());
 
         var fundingRequestService =
             new FundingRequestService(expenseService);

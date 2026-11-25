@@ -11,7 +11,7 @@ public class BudgetTests
 {
     private static BudgetsController CreateController(out ExpenseService service)
     {
-        service = new ExpenseService(DepartmentBudgets.StartingBudgets());
+        service = new ExpenseService(new TestDbFactory(),DepartmentBudgets.StartingBudgets());
         return new BudgetsController(service);
     }
 
