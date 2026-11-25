@@ -133,11 +133,17 @@ function RevenueSection() {
         })
       })
 
+      if (!response.ok) {
+        const apiError: { message?: string } = await response.json()
+        setError(apiError.message || 'Revenue request failed.')
+        return
+      }
+
       const data: RevenueResult = await response.json()
 
       setResult(data)
 
-      if (response.ok && data.approved) {
+      if (data.approved) {
         setAmount('')
         setDescription('')
         await loadSummary()
