@@ -7,6 +7,7 @@ import {
 import './App.css'
 import BudgetTable from './BudgetTable'
 import RevenueSection from './RevenueSection'
+import ReportsSection from './ReportsSection'
 import FundingRequests from './FundingRequests.tsx'
 
 const departments = [
@@ -356,6 +357,7 @@ function App() {
            </section>
 
       <RevenueSection />
+      <ReportsSection />
     </main>
   )
 }
