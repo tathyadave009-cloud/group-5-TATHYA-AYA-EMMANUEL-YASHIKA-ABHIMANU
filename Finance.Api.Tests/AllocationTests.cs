@@ -11,7 +11,7 @@ public class AllocationTests
 {
     private static AllocationsController CreateController(out ExpenseService service)
     {
-        service = new ExpenseService(DepartmentBudgets.StartingBudgets());
+        service = new ExpenseService(new TestDbFactory(),DepartmentBudgets.StartingBudgets());
         return new AllocationsController(service);
     }
 

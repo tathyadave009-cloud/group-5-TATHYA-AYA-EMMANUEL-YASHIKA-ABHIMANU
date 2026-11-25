@@ -11,7 +11,7 @@ public class ReportTests
 {
     private static (ReportsController controller, ExpenseService expenses, RevenueService revenue) Create()
     {
-        var expenses = new ExpenseService(DepartmentBudgets.StartingBudgets());
+        var expenses = new ExpenseService(new TestDbFactory(),DepartmentBudgets.StartingBudgets());
         var revenue = new RevenueService();
         return (new ReportsController(expenses, revenue), expenses, revenue);
     }
