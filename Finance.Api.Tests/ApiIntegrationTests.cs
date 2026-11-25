@@ -106,4 +106,61 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.False(string.IsNullOrWhiteSpace(error.Message));
         Assert.False(string.IsNullOrWhiteSpace(error.TraceId));
     }
+    // BF-23: Verify revenue validation uses the class error format.
+    [Theory]
+    [InlineData("DONATIONS", "SEC", 100, "Test", "Invalid revenue source.")]
+    [InlineData("FINES", "", 100, "Test", "Department code is required.")]
+    [InlineData("FINES", "SEC", 0, "Test", "Amount must be greater than zero.")]
+    [InlineData("FINES", "SEC", 100.123, "Test", "Amount must have at most two decimal places.")]
+    [InlineData("FINES", "SEC", 100, "", "Description is required.")]
+    [InlineData("FINES", "XYZ", 100, "Test", "Unknown department code.")]
+    public async Task PostRevenue_InvalidInput_Returns400InClassErrorFormat(
+        string source,
+        string departmentCode,
+        double amount,
+        string description,
+        string expectedMessage)
+    {
+        var request = new
+        {
+            Source = source,
+            DepartmentCode = departmentCode,
+            Amount = (decimal)amount,
+            Description = description
+        };
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/budget/v1/revenue", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiError>();
+
+        Assert.NotNull(error);
+        Assert.Equal("bad_request", error.Error);
+        Assert.Equal(expectedMessage, error.Message);
+        Assert.False(string.IsNullOrWhiteSpace(error.TraceId));
+    }
+
+    // BF-23: Malformed revenue requests must also use the class error format.
+    [Fact]
+    public async Task PostRevenue_BrokenJson_Returns400InClassErrorFormat()
+    {
+        var content = new StringContent(
+            "{ broken json : true ",
+            Encoding.UTF8,
+            "application/json");
+
+        var response = await _client.PostAsync(
+            "/api/budget/v1/revenue", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiError>();
+
+        Assert.NotNull(error);
+        Assert.Equal("bad_request", error.Error);
+        Assert.False(string.IsNullOrWhiteSpace(error.Message));
+        Assert.False(string.IsNullOrWhiteSpace(error.TraceId));
+    }
 }

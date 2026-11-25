@@ -1,7 +1,6 @@
-
+using Finance.Api.Models;
 using Finance.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-
 namespace Finance.Api.Controllers;
 
 // Request body for recording city revenue.
@@ -24,6 +23,8 @@ public class RevenueController : ControllerBase
 
     // POST /api/budget/v1/revenue
     [HttpPost]
+    [ProducesResponseType(typeof(RevenueResult), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
     public ActionResult<RevenueResult> Post(
         [FromBody] CreateRevenueRequest request)
     {
@@ -35,7 +36,9 @@ public class RevenueController : ControllerBase
 
         if (!result.Approved)
         {
-            return BadRequest(result);
+            return BadRequest(ApiError.BadRequest(
+                result.Message,
+                HttpContext?.TraceIdentifier));
         }
 
         return StatusCode(
