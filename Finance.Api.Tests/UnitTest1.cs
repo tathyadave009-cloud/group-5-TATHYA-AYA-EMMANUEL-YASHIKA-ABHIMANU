@@ -9,7 +9,7 @@ public class ExpenseTests
 {
     private static ExpenseService CreateService()
     {
-        return new ExpenseService(new Dictionary<string, decimal>
+        return new ExpenseService(new TestDbFactory(),new Dictionary<string, decimal>
         {
             ["EMS"] = 1000m,
             ["HR"] = 500m

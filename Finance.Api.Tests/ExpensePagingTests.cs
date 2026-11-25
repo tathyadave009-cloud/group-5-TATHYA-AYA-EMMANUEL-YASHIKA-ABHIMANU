@@ -9,7 +9,7 @@ public class ExpensePagingTests
 {
     private static ExpenseService CreateService()
     {
-        return new ExpenseService(
+        return new ExpenseService(new TestDbFactory(),
             new Dictionary<string, decimal>
             {
                 ["EMS"] = 1000m,

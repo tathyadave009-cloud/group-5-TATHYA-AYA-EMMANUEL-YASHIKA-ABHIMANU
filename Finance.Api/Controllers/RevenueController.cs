@@ -2,7 +2,6 @@
 using Finance.Api.Models;
 using Finance.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-
 namespace Finance.Api.Controllers;
 
 // Request body for recording city revenue.

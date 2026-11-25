@@ -1,9 +1,9 @@
-
 using Finance.Api.Data;
 using Finance.Api.Models;
 using Finance.Api.Services;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,8 +40,23 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod()));
 
-builder.Services.AddSingleton<ExpenseService>(_ =>
+// Database: SQL Server when a connection string is set (Azure).
+// In Development with no connection string, use an in-memory database
+// (local runs and GitHub tests have no SQL Server).
+var connectionString = builder.Configuration.GetConnectionString("Default");
+var inMemoryDbName = $"finance-{Guid.NewGuid()}";
+
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+{
+    if (builder.Environment.IsDevelopment() && string.IsNullOrWhiteSpace(connectionString))
+        options.UseInMemoryDatabase(inMemoryDbName);
+    else
+        options.UseSqlServer(connectionString);
+});
+
+builder.Services.AddSingleton<ExpenseService>(sp =>
     new ExpenseService(
+        sp.GetRequiredService<IDbContextFactory<AppDbContext>>(),
         DepartmentBudgets.StartingBudgets()));
 
 builder.Services.AddSingleton<IBudgetFundingService>(
@@ -60,6 +75,9 @@ builder.Services.AddHttpClient<SecurityNotificationService>(client =>
 });
 
 var app = builder.Build();
+
+// Create the ExpenseService now so the database is checked at startup.
+app.Services.GetRequiredService<ExpenseService>();
 
 app.UseExceptionHandler(exceptionHandlerApp =>
 {
