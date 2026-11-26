@@ -1,6 +1,8 @@
+using Finance.Api.Auth;
 using Finance.Api.Models;
 using Finance.Api.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Finance.Api.Controllers;
@@ -69,6 +71,7 @@ public class FundingRequestsController : ControllerBase
     }
 
     [HttpPut("{id:guid}/decision")]
+    [Authorize(Policy = Policies.Manager)] // BF-10: Manager only
     public async Task<ActionResult<FundingRequest>> DecideAsync(
         Guid id,
         [FromBody] FundingDecisionRequest request,
@@ -76,6 +79,12 @@ public class FundingRequestsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = _fundingRequestService.Decide(id, request.Approved);
+
+        // BF-22: audit log of every funding decision.
+        HttpContext?.RequestServices?.GetService<ILogger<FundingRequestsController>>()?.LogInformation(
+            "Audit: funding request {Id} {Decision} by {User} ({Outcome})",
+            id, request.Approved ? "approved" : "rejected",
+            User?.Identity?.Name ?? "anonymous", result.Outcome);
 
         if (result.Outcome == FundingDecisionOutcome.Success &&
             result.Request is { } decided &&

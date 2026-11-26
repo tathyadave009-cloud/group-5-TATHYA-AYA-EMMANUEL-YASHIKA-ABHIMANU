@@ -51,7 +51,9 @@ public class ExpenseService : IBudgetFundingService
                 db.Budgets.Add(new BudgetEntity
                 {
                     DepartmentCode = key,
-                    Allocated = amount
+                    Allocated = amount,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow
                 });
             }
         }
@@ -186,6 +188,7 @@ public class ExpenseService : IBudgetFundingService
             }
 
             budget.Allocated = newAllocated;
+            budget.UpdatedAtUtc = DateTime.UtcNow; // BF-22
             db.SaveChanges();
 
             return new(true, "Budget updated.");
@@ -216,6 +219,7 @@ public class ExpenseService : IBudgetFundingService
                 throw new ArgumentException("Unknown department code.");
 
             budget.Allocated += amount;
+            budget.UpdatedAtUtc = DateTime.UtcNow; // BF-22
             db.SaveChanges();
         }
     }

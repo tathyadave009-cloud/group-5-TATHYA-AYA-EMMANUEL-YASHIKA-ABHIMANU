@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace Finance.Api.Data;
 
@@ -16,6 +16,10 @@ public class BudgetEntity
 {
     public string DepartmentCode { get; set; } = "";
     public decimal Allocated { get; set; }
+
+    // BF-22: audit fields.
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime UpdatedAtUtc { get; set; }
 }
 
 public class AppDbContext : DbContext
