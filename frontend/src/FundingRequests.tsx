@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isManager } from './auth';
 
 // One funding request, exactly as GET /api/budget/v1/funding-requests returns it.
 // The server sends status as a number (0 Pending, 1 Approved, 2 Rejected), but we
@@ -12,6 +13,11 @@ interface FundingRequest {
   createdAtUtc: string;
   status: number | string;
   decidedAtUtc: string | null;
+  // HR fields (BF-29). Optional: only requests that come from HR have them.
+  requisitionNumber?: string | null;
+  role?: string | null;
+  positions?: number | null;
+  hrNotified?: boolean | null;
 }
 
 const FUNDING_URL = '/api/budget/v1/funding-requests';
@@ -28,7 +34,7 @@ function statusText(status: number | string): string {
   return String(status);
 }
 
-// Pulls the "message" out of an error body such as { message: "..." }.
+// Pulls the "message" out of the class error format { error, message, traceId }.
 function messageFrom(body: unknown, fallback: string): string {
   if (body && typeof body === 'object' && 'message' in body) {
     const m = (body as { message: unknown }).message;
@@ -44,10 +50,20 @@ export default function FundingRequests() {
   const [busyId, setBusyId] = useState<string | null>(null); // request being decided
   const [actionError, setActionError] = useState('');
 
+  // BF-25: only a Manager sees the Approve and Reject buttons.
+  const canApprove = isManager();
+
   async function load(isActive: () => boolean = () => true) {
     try {
       const res = await fetch(FUNDING_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        // Show the API's own message when it sends one in the class error format.
+        const body: unknown = await res.json().catch(() => null);
+        if (isActive()) {
+          setError(messageFrom(body, 'Budget & Finance service is unavailable.'));
+        }
+        return;
+      }
       const data: unknown = await res.json();
       if (!Array.isArray(data)) throw new Error('Unexpected response');
       if (isActive()) {
@@ -111,12 +127,16 @@ export default function FundingRequests() {
         <table border={1} cellPadding={8} style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr>
+              <th>Requisition #</th>
               <th>Department</th>
+              <th>Role</th>
+              <th>Positions</th>
               <th>Amount</th>
               <th>Reason</th>
               <th>Urgent</th>
               <th>Status</th>
               <th>Date</th>
+              <th>HR notified</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -125,7 +145,10 @@ export default function FundingRequests() {
               const status = statusText(r.status);
               return (
                 <tr key={r.id}>
+                  <td>{r.requisitionNumber ?? '—'}</td>
                   <td>{r.departmentCode}</td>
+                  <td>{r.role ?? '—'}</td>
+                  <td>{r.positions ?? '—'}</td>
                   <td>{money(r.amount)}</td>
                   <td>{r.reason}</td>
                   <td>
@@ -146,7 +169,14 @@ export default function FundingRequests() {
                   <td>{status}</td>
                   <td>{new Date(r.createdAtUtc).toLocaleString()}</td>
                   <td>
-                    {status === 'Pending' && (
+                    {status === 'Pending' || r.requisitionNumber == null
+                      ? '—'
+                      : r.hrNotified
+                        ? 'Yes'
+                        : 'No'}
+                  </td>
+                  <td>
+                    {status === 'Pending' && canApprove && (
                       <>
                         <button
                           type="button"

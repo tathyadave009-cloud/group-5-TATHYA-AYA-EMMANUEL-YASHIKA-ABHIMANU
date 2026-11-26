@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
-
+import { isManager } from './auth';
 // One department, exactly as GET /api/budgets returns it.
 // The code field is called departmentCode in Aya's message and departmentId in
 // the sprint doc, so we accept either one.
@@ -34,6 +34,7 @@ export default function BudgetTable() {
   const [budgets, setBudgets] = useState<DepartmentBudget[]>([]);
   const [error, setError] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const canEdit = isManager();
 
   // BF-16: which row is being edited (null = none), what is typed in the box,
   // whether a save is in progress, and the red error text.
@@ -169,7 +170,7 @@ export default function BudgetTable() {
                           Cancel
                         </button>
                       </>
-                    ) : (
+                    ) : canEdit ? (
                       <button
                         type="button"
                         disabled={editingCode !== null}
@@ -177,7 +178,7 @@ export default function BudgetTable() {
                       >
                         Edit
                       </button>
-                    )}
+                    ) : null}
                   </td>
                 </tr>
                 {isEditing && saveError && (

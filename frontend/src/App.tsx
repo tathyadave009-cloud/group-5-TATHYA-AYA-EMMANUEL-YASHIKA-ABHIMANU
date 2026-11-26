@@ -9,6 +9,7 @@ import BudgetTable from './BudgetTable'
 import RevenueSection from './RevenueSection'
 import ReportsSection from './ReportsSection'
 import FundingRequests from './FundingRequests.tsx'
+import HrPayroll from './HrPayroll.tsx'
 
 const departments = [
   'TRANSIT',
@@ -174,6 +175,8 @@ function App() {
       <BudgetTable />
 
       <FundingRequests />
+
+      <HrPayroll />
 
       <h2>BF-05 — Expense Submission</h2>
 
