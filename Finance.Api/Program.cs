@@ -74,6 +74,20 @@ builder.Services.AddHttpClient<SecurityNotificationService>(client =>
     client.Timeout = TimeSpan.FromSeconds(5);
 });
 
+// BF-29: HR funding decision notification client.
+builder.Services.AddHttpClient<HrClient>(client =>
+{
+    var baseUrl = builder.Configuration["Hr:BaseUrl"];
+
+    if (Uri.TryCreate(baseUrl?.Trim().TrimEnd('/') + "/",
+        UriKind.Absolute, out var address) &&
+        (address.Scheme == Uri.UriSchemeHttps ||
+         (address.Scheme == Uri.UriSchemeHttp && address.IsLoopback)))
+    {
+        client.BaseAddress = address;
+    }
+});
+
 var app = builder.Build();
 
 // Create the ExpenseService now so the database is checked at startup.
