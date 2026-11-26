@@ -18,7 +18,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task GetHealth_HealthEndpoint_Returns200WithVersion020()
+    public async Task GetHealth_HealthEndpoint_Returns200WithVersion100()
     {
         var response = await _client.GetAsync("/health");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -26,11 +26,11 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal("Healthy", doc.RootElement.GetProperty("status").GetString());
         Assert.Equal("BudgetFinance", doc.RootElement.GetProperty("service").GetString());
-        Assert.Equal("0.2.0", doc.RootElement.GetProperty("version").GetString());
+        Assert.Equal("1.0.0", doc.RootElement.GetProperty("version").GetString());
     }
 
     [Fact]
-    public async Task GetHealth_ApiHealthEndpoint_Returns200WithVersion020()
+    public async Task GetHealth_ApiHealthEndpoint_Returns200WithVersion100()
     {
         var response = await _client.GetAsync("/api/health");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -38,7 +38,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal("Healthy", doc.RootElement.GetProperty("status").GetString());
         Assert.Equal("BudgetFinance", doc.RootElement.GetProperty("service").GetString());
-        Assert.Equal("0.2.0", doc.RootElement.GetProperty("version").GetString());
+        Assert.Equal("1.0.0", doc.RootElement.GetProperty("version").GetString());
     }
 
     [Fact]

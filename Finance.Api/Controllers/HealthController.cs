@@ -14,6 +14,6 @@ public class HealthController : ControllerBase
     [HttpGet("api/health")]
     public ActionResult<HealthResponse> GetHealth()
     {
-        return Ok(new HealthResponse("Healthy", "BudgetFinance", "0.2.0"));
+        return Ok(new HealthResponse("Healthy", "BudgetFinance", "1.0.0"));
     }
 }

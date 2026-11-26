@@ -31,6 +31,12 @@ public class ExpensesController : ControllerBase
             request.Amount,
             request.Description);
 
+        // BF-22: log every expense, approved or refused.
+        HttpContext?.RequestServices?.GetService<ILogger<ExpensesController>>()?.LogInformation(
+            "Audit: expense {Amount} for {Department} {Outcome}: {Message}",
+            request.Amount, request.DepartmentCode,
+            result.Approved ? "approved" : "refused", result.Message);
+
         if (!result.Approved)
         {
             return BadRequest(result);

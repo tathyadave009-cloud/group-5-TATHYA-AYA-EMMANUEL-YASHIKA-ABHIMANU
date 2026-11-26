@@ -1,6 +1,8 @@
+using Finance.Api.Auth;
 using Finance.Api.Data;
 using Finance.Api.Models;
 using Finance.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Finance.Api.Controllers;
@@ -60,6 +62,7 @@ public class BudgetsController : ControllerBase
     // BF-06: PUT /api/budget/v1/budgets/EMS  body: { "allocated": 5000000 }
     // 200 = changed, 404 = unknown department, 400 = refused (e.g. lower than spent)
     [HttpPut("{departmentCode}")]
+    [Authorize(Policy = Policies.Manager)] // BF-10: Manager only
     public ActionResult<Budget> Update(string departmentCode, [FromBody] UpdateBudgetRequest request)
     {
         var department = DepartmentBudgets.Find(departmentCode);
@@ -79,6 +82,11 @@ public class BudgetsController : ControllerBase
                 result.Message,
                 HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("n")));
         }
+
+        // BF-22: audit log of who changed which budget.
+        HttpContext?.RequestServices?.GetService<ILogger<BudgetsController>>()?.LogInformation(
+            "Audit: budget {Department} set to {Allocated} by {User}",
+            department.Code, request.Allocated, User?.Identity?.Name ?? "anonymous");
 
         return Ok(ToBudget(department));
     }

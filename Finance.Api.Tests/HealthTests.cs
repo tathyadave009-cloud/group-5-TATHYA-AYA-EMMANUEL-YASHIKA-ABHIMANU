@@ -17,6 +17,6 @@ public class HealthTests
 
         Assert.Equal("Healthy", health.Status);
         Assert.Equal("BudgetFinance", health.Service);
-        Assert.Equal("0.2.0", health.Version);
+        Assert.Equal("1.0.0", health.Version);
     }
 }
