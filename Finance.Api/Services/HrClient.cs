@@ -1,5 +1,6 @@
-﻿using System.Net.Http;
+using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,6 +57,42 @@ public sealed class HrClient
             when (!cancellationToken.IsCancellationRequested)
         {
             return false;
+        }
+    }
+    // BF-30: headcount and salary totals per department from HR
+    // (GET {Hr:BaseUrl}/headcounts/payroll). HR only shares totals, never individual salaries.
+    // Returns null when HR is not configured, down, slow (5 s) or sends something that is not JSON.
+    public async Task<JsonElement?> TryGetPayrollAsync(CancellationToken cancellationToken = default)
+    {
+        if (_httpClient.BaseAddress is null)
+            return null;
+
+        using var timeout = CancellationTokenSource
+            .CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            using var response = await _httpClient.GetAsync("headcounts/payroll", timeout.Token);
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: timeout.Token);
+            return document.RootElement.Clone();
+        }
+        catch (HttpRequestException)
+        {
+            return null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+        catch (OperationCanceledException)
+            when (!cancellationToken.IsCancellationRequested)
+        {
+            return null;
         }
     }
 }
